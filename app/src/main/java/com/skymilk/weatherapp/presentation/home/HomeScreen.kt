@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.skymilk.weatherapp.domain.common.SunRiseWeatherItem
+import com.skymilk.weatherapp.domain.common.UvWeatherItem
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
@@ -169,67 +171,10 @@ fun HourlyWeatherSection(
                 modifier = Modifier.padding(16.dp)
             ) {
 
-                Log.d("zzz", hourly.weatherInfo.size.toString())
                 items(hourly.weatherInfo) { itemInfo ->
                     HourlyWeatherInfoItem(itemInfo = itemInfo)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun SunRiseWeatherItem(
-    modifier: Modifier = Modifier,
-    weatherInfo: Daily.WeatherInfo
-) {
-    Card(
-        Modifier.padding(horizontal = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = "일출", style = MaterialTheme.typography.headlineSmall)
-
-            Text(
-                text = weatherInfo.sunrise,
-                style = MaterialTheme.typography.displayMedium
-            )
-
-            Text(
-                text = "일몰 ${weatherInfo.sunset}",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
-
-@Composable
-fun UvWeatherItem(
-    modifier: Modifier = Modifier,
-    weatherInfo: Daily.WeatherInfo
-) {
-    Card(
-        Modifier.padding(horizontal = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(text = "자외선 지수", style = MaterialTheme.typography.headlineSmall)
-
-            Text(
-                text = weatherInfo.uvIndex.toString(),
-                style = MaterialTheme.typography.displayMedium
-            )
-
-            Text(
-                text = "날씨 : ${weatherInfo.weatherStatus.info}",
-                style = MaterialTheme.typography.bodyMedium
-            )
         }
     }
 }

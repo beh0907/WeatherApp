@@ -1,4 +1,4 @@
-package com.skymilk.weatherapp.presentation.home
+package com.skymilk.weatherapp.presentation.daily
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,50 +7,38 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.skymilk.weatherapp.domain.repository.WeatherRepository
 import com.skymilk.weatherapp.utils.Response
-import com.skymilk.weatherapp.utils.Util
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class DailyViewModel @Inject constructor(
     private val repository: WeatherRepository
 ) : ViewModel() {
 
-    //홈 상태 정보
-    var homeState by mutableStateOf(HomeState())
+    var dailyState by mutableStateOf(DailyState())
         private set
 
     init {
+
         viewModelScope.launch {
             repository.getWeatherData().collectLatest { response ->
                 when (response) {
                     is Response.Loading -> {
-                        homeState = homeState.copy(isLoading = true)
+                        dailyState = dailyState.copy(isLoading = true)
                     }
 
                     is Response.Success -> {
-                        homeState =
-                            homeState.copy(isLoading = false, weather = response.data, error = null)
-
-                        //오늘 날씨 정보를 필터링한다
-                        val todayWeatherInfo = response.data?.daily?.weatherInfo?.find {
-                            Util.isTodayDate(it.time)
-                        }
-                        homeState = homeState.copy(dailyWeatherInfo = todayWeatherInfo)
-
+                        dailyState = dailyState.copy(isLoading = false, error = null, daily = response.data?.daily)
                     }
 
                     is Response.Error -> {
-                        homeState = homeState.copy(
-                            isLoading = false,
-                            weather = null,
-                            error = response.message
-                        )
+                        dailyState = dailyState.copy(isLoading = false, error = response.message, daily = null)
                     }
                 }
             }
         }
     }
+
 }
