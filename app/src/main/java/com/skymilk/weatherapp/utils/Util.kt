@@ -9,14 +9,14 @@ import java.util.Locale
 object Util {
     //풍향 정보
     private val DIRECTIONS = listOf(
-        "North",
-        "North East",
-        "East",
-        "South East",
-        "South",
-        "South West",
-        "West",
-        "North West"
+        "북풍",
+        "북동풍",
+        "동풍",
+        "남동풍",
+        "남풍",
+        "남서풍",
+        "서풍",
+        "북서풍"
     )
 
 
@@ -41,7 +41,7 @@ object Util {
             0 -> WeatherInfoItem("맑은 하늘", R.drawable.clear_sky)
             1 -> WeatherInfoItem("대체로 맑음", R.drawable.mainly_clear)
             2 -> WeatherInfoItem("구름 조금", R.drawable.mainly_clear)
-            3 -> WeatherInfoItem("흐린", R.drawable.over_cast)
+            3 -> WeatherInfoItem("흐림", R.drawable.over_cast)
             45, 48 -> WeatherInfoItem("안개", R.drawable.fog)
             51, 53, 55,
             -> WeatherInfoItem("이슬비", R.drawable.drizzle)

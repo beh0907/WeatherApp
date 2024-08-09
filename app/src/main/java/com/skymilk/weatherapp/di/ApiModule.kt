@@ -25,20 +25,13 @@ object ApiModule {
 
     @Provides
     @Singleton
-    fun provideApi(builder: Retrofit.Builder): WeatherApi {
-        return Retrofit.Builder()
-            .build()
-            .create(WeatherApi::class.java)
-
-    }
-
-    @Provides
-    @Singleton
-    fun provideRetrofit():Retrofit.Builder {
+    fun provideRetrofit(): WeatherApi {
         val contentType = "application/json".toMediaType()
 
         return Retrofit.Builder()
             .baseUrl(Constants.API_BASE_URL)
             .addConverterFactory(json.asConverterFactory(contentType))
+            .build()
+            .create(WeatherApi::class.java)
     }
 }
