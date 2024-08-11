@@ -26,11 +26,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.skymilk.weatherapp.domain.common.SunRiseWeatherItem
-import com.skymilk.weatherapp.domain.common.UvWeatherItem
+import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
+import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
+import com.skymilk.weatherapp.presentation.common.shimmerEffect
 import com.skymilk.weatherapp.utils.Util
 import java.util.Date
 

@@ -1,4 +1,4 @@
-package com.skymilk.weatherapp.domain.common
+package com.skymilk.weatherapp.presentation.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

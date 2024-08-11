@@ -1,11 +1,15 @@
 package com.skymilk.weatherapp.di
 
+import android.content.Context
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.skymilk.weatherapp.data.remote.WeatherApi
+import com.skymilk.weatherapp.data.repository.LocalDataRepositoryImpl
+import com.skymilk.weatherapp.domain.repository.LocalDataRepository
 import com.skymilk.weatherapp.utils.Constants
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -34,4 +38,10 @@ object ApiModule {
             .build()
             .create(WeatherApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideLocalDataRepository(
+        @ApplicationContext appContext: Context
+    ): LocalDataRepository = LocalDataRepositoryImpl(appContext)
 }

@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import com.skymilk.weatherapp.presentation.daily.DailyScreen
 import com.skymilk.weatherapp.presentation.home.HomeScreen
 import com.skymilk.weatherapp.ui.theme.WeatherAppTheme
-import com.skymilk.weatherapp.utils.Tabs
+import com.skymilk.weatherapp.presentation.common.Tabs
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

@@ -31,8 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.skymilk.weatherapp.R
-import com.skymilk.weatherapp.domain.common.SunRiseWeatherItem
-import com.skymilk.weatherapp.domain.common.UvWeatherItem
+import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
+import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.domain.models.Daily
 
 @Composable
