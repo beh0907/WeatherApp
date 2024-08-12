@@ -72,6 +72,9 @@ dependencies {
 
     implementation (libs.kotlinx.serialization.json)
 
+    //lifecycle (생명주기 연동 flow 수집)
+    implementation(libs.lifecycle.runtime.compose)
+
     //Hilt Dagger
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
@@ -84,6 +87,9 @@ dependencies {
 
     //SharedPreferences
     implementation (libs.androidx.datastore.preferences)
+
+    //TedPermission
+    implementation(libs.tedpermission.coroutine)
 }
 
 kapt {

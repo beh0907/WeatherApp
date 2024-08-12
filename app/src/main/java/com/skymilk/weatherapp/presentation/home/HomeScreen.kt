@@ -1,6 +1,5 @@
 package com.skymilk.weatherapp.presentation.home
 
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,24 +13,28 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
-import com.skymilk.weatherapp.presentation.common.UvWeatherItem
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
-import com.skymilk.weatherapp.presentation.common.shimmerEffect
+import com.skymilk.weatherapp.presentation.common.LoadingDialog
+import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
+import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.utils.Util
 import java.util.Date
 
@@ -40,44 +43,53 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
+    //collectAsStateWithLifecycle - 앱이 사용할 때만 플로우를 수집한다
+    val homeState by homeViewModel.homeState.collectAsStateWithLifecycle()
 
-    val homeState = homeViewModel.homeState
+    //로딩 다이얼로그 표시
+    LoadingDialog(isLoading = homeState.isLoading)
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp), contentAlignment = Alignment.Center
     ) {
-        when (homeState.isLoading) {
-            true -> {
-                CircularProgressIndicator()
-            }
+        //위치 정보 새로고침
+        IconButton(
+            modifier = Modifier
+                .size(36.dp)
+                .align(Alignment.TopEnd),
+            onClick = { homeViewModel.refreshLocation() }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = "refresh"
+            )
+        }
 
-            false -> {
-                //날씨 정보가 있을떄
-                homeState.weather?.let {
-                    //현재 날씨 정보
-                    CurrentWeatherSection(
-                        modifier = Modifier.align(Alignment.TopCenter),
-                        currentWeather = it.currentWeather
-                    )
+        //날씨 정보가 있을떄
+        homeState.weather?.let {
+            //현재 날씨 정보
+            CurrentWeatherSection(
+                modifier = Modifier.align(Alignment.TopCenter),
+                currentWeather = it.currentWeather
+            )
 
-                    //시간별 날씨
-                    HourlyWeatherSection(
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                        hourly = it.hourly
-                    )
-                }
+            //시간별 날씨
+            HourlyWeatherSection(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                hourly = it.hourly
+            )
+        }
 
-                //필터링된 오늘 날씨 정보가 있을 때
-                homeState.dailyWeatherInfo?.let {
-                    DailyWeatherSection(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        dailyWeatherInfo = it
-                    )
-                }
-            }
+        //필터링된 오늘 날씨 정보가 있을 때
+        homeState.dailyWeatherInfo?.let {
+            DailyWeatherSection(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                dailyWeatherInfo = it
+            )
         }
     }
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,7 +21,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,25 +28,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skymilk.weatherapp.R
+import com.skymilk.weatherapp.domain.models.Daily
+import com.skymilk.weatherapp.presentation.common.LoadingDialog
 import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
 import com.skymilk.weatherapp.presentation.common.UvWeatherItem
-import com.skymilk.weatherapp.domain.models.Daily
 
 @Composable
 fun DailyScreen(
     modifier: Modifier = Modifier,
     dailyViewModel: DailyViewModel = hiltViewModel()
 ) {
-    val dailyState = dailyViewModel.dailyState
-    var selectedIndexWeather = remember {
+    //collectAsStateWithLifecycle - 앱이 사용할 때만 플로우를 수집한다
+    val dailyState by dailyViewModel.dailyState.collectAsStateWithLifecycle()
+    val selectedIndexWeather = remember {
         mutableIntStateOf(0)
     }
 
     //key1,2의 정보가 변할때 재실행한다
-    val currentDailyWeatherItem = remember(key1 = selectedIndexWeather.value, key2 = dailyState) {
-        dailyState.daily?.weatherInfo?.get(selectedIndexWeather.value)
-    }
+    val currentDailyWeatherItem =
+        remember(key1 = selectedIndexWeather.intValue, key2 = dailyState) {
+            dailyState.daily?.weatherInfo?.get(selectedIndexWeather.intValue)
+        }
+
+    //로딩 다이얼로그 표시
+    LoadingDialog(isLoading = dailyState.isLoading)
 
     Column(
         modifier = modifier
@@ -57,44 +62,36 @@ fun DailyScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
-        when (dailyState.isLoading) {
-            true -> {
-                CircularProgressIndicator()
-            }
+        //선택한 날씨의 최고/저 온도
+        currentDailyWeatherItem?.let {
+            Text(
+                text = "최고 온도:${currentDailyWeatherItem.temperatureMax} 최저 온도:${currentDailyWeatherItem.temperatureMin}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
 
-            false -> {
-                //선택한 날씨의 최고/저 온도
-                currentDailyWeatherItem?.let {
-                    Text(
-                        text = "최고 온도:${currentDailyWeatherItem.temperatureMax} 최저 온도:${currentDailyWeatherItem.temperatureMin}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+        Spacer(modifier = Modifier.height(16.dp))
 
-                Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "7일 날씨 예측",
+            style = MaterialTheme.typography.headlineSmall
+        )
 
-                Text(
-                    text = "7일 날씨 예측",
-                    style = MaterialTheme.typography.headlineSmall
-                )
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+        //일주일 날씨 정보 목록
+        DailyWeatherList(dailyState, selectedIndexWeather)
 
-                //일주일 날씨 정보 목록
-                DailyWeatherList(dailyState, selectedIndexWeather)
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
+        //선택한 날짜의 바람 상태 정보
+        SelectDailyWeatherWindSection(currentDailyWeatherItem)
 
-                //선택한 날짜의 바람 상태 정보
-                SelectDailyWeatherWindSection(currentDailyWeatherItem)
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                //선택한 날씨 일출/몰, 자외선 정보
-                currentDailyWeatherItem?.let {
-                    SelectDailyWeatherSection(selectDailyWeatherInfo = it)
-                }
-            }
+        //선택한 날씨 일출/몰, 자외선 정보
+        currentDailyWeatherItem?.let {
+            SelectDailyWeatherSection(selectDailyWeatherInfo = it)
         }
     }
 }

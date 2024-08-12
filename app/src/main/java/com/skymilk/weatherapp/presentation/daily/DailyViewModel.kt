@@ -1,15 +1,19 @@
 package com.skymilk.weatherapp.presentation.daily
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.skymilk.weatherapp.domain.repository.LocalDataRepository
 import com.skymilk.weatherapp.domain.repository.WeatherRepository
+import com.skymilk.weatherapp.utils.Event
 import com.skymilk.weatherapp.utils.Response
+import com.skymilk.weatherapp.utils.sendEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,8 +23,8 @@ class DailyViewModel @Inject constructor(
     private val localDataRepository: LocalDataRepository
 ) : ViewModel() {
 
-    var dailyState by mutableStateOf(DailyState())
-        private set
+    private val _dailyState = MutableStateFlow(DailyState())
+    val dailyState = _dailyState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -31,21 +35,36 @@ class DailyViewModel @Inject constructor(
                 weatherRepository.getWeatherData(location).collectLatest { response ->
                     when (response) {
                         is Response.Loading -> {
-                            dailyState = dailyState.copy(isLoading = true)
+                            _dailyState.update {
+                                it.copy(isLoading = true)
+                            }
                         }
 
                         is Response.Success -> {
-                            dailyState = dailyState.copy(isLoading = false, error = null, daily = response.data?.daily)
+                            _dailyState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = null,
+                                    daily = response.data?.daily
+                                )
+                            }
                         }
 
                         is Response.Error -> {
-                            dailyState = dailyState.copy(isLoading = false, error = response.message, daily = null)
+                            _dailyState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = response.message,
+                                    daily = null
+                                )
+                            }
+
+                            //에러 발생 알림 이벤트 전달
+                            sendEvent(Event.Toast(response.message!!))
                         }
                     }
                 }
             }
-
-
         }
     }
 }
