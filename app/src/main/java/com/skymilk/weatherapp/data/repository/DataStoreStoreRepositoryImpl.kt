@@ -7,14 +7,16 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import com.skymilk.weatherapp.domain.repository.LocalDataRepository
+import com.skymilk.weatherapp.domain.repository.DataStoreRepository
 import com.skymilk.weatherapp.utils.Constants
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class LocalDataRepositoryImpl(
-    private val context: Context
-) : LocalDataRepository {
+class DataStoreStoreRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context
+) : DataStoreRepository {
     override suspend fun saveCurrentLocation(location: Pair<Double, Double>) {
         context.dataStore.edit { local ->
             //위경도 정보 저장
@@ -27,9 +29,8 @@ class LocalDataRepositoryImpl(
         return context.dataStore.data.map { preferences ->
 
             // 기본값 설정 (저장된 값이 없을 때)
-            val latitude = preferences[PreferencesKeys.APP_LOCATION_LATITUDE] ?: 37.3359
-            val longitude = preferences[PreferencesKeys.APP_LOCATION_LONGITUDE] ?: 126.8056
-
+            val latitude = preferences[PreferencesKeys.APP_LOCATION_LATITUDE] ?: 37.514575
+            val longitude = preferences[PreferencesKeys.APP_LOCATION_LONGITUDE] ?: 127.0495556
 
             Log.d("Data Store 위치 정보", "$latitude $longitude")
 

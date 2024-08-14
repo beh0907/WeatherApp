@@ -1,5 +1,9 @@
 package com.skymilk.weatherapp.presentation.home
 
+import android.Manifest.permission.ACCESS_COARSE_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.Intent
+import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,13 +26,18 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
@@ -38,6 +47,7 @@ import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.utils.Util
 import java.util.Date
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -45,6 +55,27 @@ fun HomeScreen(
 ) {
     //collectAsStateWithLifecycle - 앱이 사용할 때만 플로우를 수집한다
     val homeState by homeViewModel.homeState.collectAsStateWithLifecycle()
+    val isGpsEnabled by homeViewModel.isGpsEnabled.collectAsState()
+
+    val context = LocalContext.current
+
+    //권한 상태
+    val locationPermissionState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            ACCESS_FINE_LOCATION,
+            ACCESS_COARSE_LOCATION
+        )
+    )
+
+    // 권한과 GPS 상태에 따라 위치 정보를 가져옴
+    LaunchedEffect(isGpsEnabled, locationPermissionState.allPermissionsGranted) {
+        if (locationPermissionState.allPermissionsGranted) {
+            homeViewModel.checkPermissionsAndFetchLocation(true)
+        } else {
+            homeViewModel.checkPermissionsAndFetchLocation(false)
+            locationPermissionState.launchMultiplePermissionRequest()
+        }
+    }
 
     //로딩 다이얼로그 표시
     LoadingDialog(isLoading = homeState.isLoading)
@@ -59,7 +90,30 @@ fun HomeScreen(
             modifier = Modifier
                 .size(36.dp)
                 .align(Alignment.TopEnd),
-            onClick = { homeViewModel.refreshLocation() }
+            onClick = {
+                //권한 여부 체크
+                if (locationPermissionState.allPermissionsGranted) {
+
+                    //GPS 활성화 여부 체크
+                    when (isGpsEnabled) {
+                        true -> {
+                            //활성화 상태라면 위치 정보를 가져온다
+                            homeViewModel.checkPermissionsAndFetchLocation(true)
+                        }
+
+                        false -> {
+                            // GPS 설정 화면으로 이동
+                            context.startActivity(Intent(ACTION_LOCATION_SOURCE_SETTINGS))
+
+                        }
+                    }
+
+                } else {
+                    //권한이 없다면 다시 권한 요청
+                    locationPermissionState.launchMultiplePermissionRequest()
+                }
+
+            }
         ) {
             Icon(
                 imageVector = Icons.Default.Refresh,

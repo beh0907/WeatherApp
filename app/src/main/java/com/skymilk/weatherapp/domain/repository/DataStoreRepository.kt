@@ -2,7 +2,7 @@ package com.skymilk.weatherapp.domain.repository
 
 import kotlinx.coroutines.flow.Flow
 
-interface LocalDataRepository {
+interface DataStoreRepository {
 
     suspend fun saveCurrentLocation(location: Pair<Double, Double>)
 

@@ -1,15 +1,13 @@
 package com.skymilk.weatherapp.presentation.daily
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skymilk.weatherapp.domain.repository.LocalDataRepository
+import com.skymilk.weatherapp.domain.repository.DataStoreRepository
 import com.skymilk.weatherapp.domain.repository.WeatherRepository
 import com.skymilk.weatherapp.utils.Event
-import com.skymilk.weatherapp.utils.Response
+import com.skymilk.weatherapp.utils.Resource
 import com.skymilk.weatherapp.utils.sendEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -20,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class DailyViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
-    private val localDataRepository: LocalDataRepository
+    private val dataStoreRepository: DataStoreRepository
 ) : ViewModel() {
 
     private val _dailyState = MutableStateFlow(DailyState())
@@ -29,18 +27,18 @@ class DailyViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             //DataStore로부터 위치 정보 가져오기
-            localDataRepository.getLocation().collectLatest { location ->
+            dataStoreRepository.getLocation().collectLatest { location ->
 
                 //API로부터 날씨 정보 가져오기
                 weatherRepository.getWeatherData(location).collectLatest { response ->
                     when (response) {
-                        is Response.Loading -> {
+                        is Resource.Loading -> {
                             _dailyState.update {
                                 it.copy(isLoading = true)
                             }
                         }
 
-                        is Response.Success -> {
+                        is Resource.Success -> {
                             _dailyState.update {
                                 it.copy(
                                     isLoading = false,
@@ -50,7 +48,7 @@ class DailyViewModel @Inject constructor(
                             }
                         }
 
-                        is Response.Error -> {
+                        is Resource.Error -> {
                             _dailyState.update {
                                 it.copy(
                                     isLoading = false,

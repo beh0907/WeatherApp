@@ -1,10 +1,10 @@
 package com.skymilk.weatherapp.di
 
 import android.content.Context
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.skymilk.weatherapp.data.remote.WeatherApi
-import com.skymilk.weatherapp.data.repository.LocalDataRepositoryImpl
-import com.skymilk.weatherapp.domain.repository.LocalDataRepository
 import com.skymilk.weatherapp.utils.Constants
 import dagger.Module
 import dagger.Provides
@@ -41,7 +41,6 @@ object ApiModule {
 
     @Provides
     @Singleton
-    fun provideLocalDataRepository(
-        @ApplicationContext appContext: Context
-    ): LocalDataRepository = LocalDataRepositoryImpl(appContext)
+    fun provideFusedLocationProviderClient(@ApplicationContext context: Context): FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context)
 }
