@@ -32,8 +32,6 @@ class DataStoreStoreRepositoryImpl @Inject constructor(
             val latitude = preferences[PreferencesKeys.APP_LOCATION_LATITUDE] ?: 37.514575
             val longitude = preferences[PreferencesKeys.APP_LOCATION_LONGITUDE] ?: 127.0495556
 
-            Log.d("Data Store 위치 정보", "$latitude $longitude")
-
             //결과 리턴
             Pair(latitude, longitude)
         }

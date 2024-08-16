@@ -35,6 +35,17 @@ object Util {
         return DIRECTIONS[(windDirection % 360 / 45 % 8).toInt()]
     }
 
+    //현재 hour 정보
+    fun getCurrentHour(): Int {
+        val hour = formatNormalDate("HH", Date().time)
+        return hour.toInt()
+    }
+
+    fun isTodayDate(day: String): Boolean {
+        val todayDate = formatNormalDate("E", Date().time)
+        return todayDate.lowercase() == day.lowercase()
+    }
+
     //코드값 변환
     fun getWeatherInfo(code: Int): WeatherInfoItem {
         return when (code) {
@@ -62,11 +73,6 @@ object Util {
             95, 96, 99 -> WeatherInfoItem("천둥번개", R.drawable.thunder_storm)
             else -> WeatherInfoItem("알 수 없음", R.drawable.clear_sky)
         }
-    }
-
-    fun isTodayDate(day: String): Boolean {
-        val todayDate = formatNormalDate("E", Date().time)
-        return todayDate.lowercase() == day.lowercase()
     }
 
 }

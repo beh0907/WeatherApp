@@ -2,8 +2,9 @@ package com.skymilk.weatherapp.presentation.home
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.content.Intent
-import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +42,12 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
+import com.skymilk.weatherapp.presentation.common.GpsUtil.promptEnableGPS
 import com.skymilk.weatherapp.presentation.common.LoadingDialog
 import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
 import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.utils.Util
+import com.skymilk.weatherapp.utils.Util.getCurrentHour
 import java.util.Date
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -65,14 +68,26 @@ fun HomeScreen(
             ACCESS_FINE_LOCATION,
             ACCESS_COARSE_LOCATION
         )
-    )
+    ) { map ->
+        //위치정보 권한이 허용되었을 때
+        if (map[ACCESS_FINE_LOCATION] == true && map[ACCESS_COARSE_LOCATION] == true)
+            Log.d("rememberMultiplePermissionsState", "권한 체크")
+    }
+
+    // rememberLauncherForActivityResult는 @Composable 컨텍스트에서 호출되어야 합니다.
+    val launcher =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+            if (result.resultCode == android.app.Activity.RESULT_OK) {
+                Log.d("권한", "활성화 됐어용~")
+            }
+        }
 
     // 권한과 GPS 상태에 따라 위치 정보를 가져옴
     LaunchedEffect(isGpsEnabled, locationPermissionState.allPermissionsGranted) {
         if (locationPermissionState.allPermissionsGranted) {
-            homeViewModel.checkPermissionsAndFetchLocation(true)
+            homeViewModel.checkPermissionsAndTrackingLocation(true)
         } else {
-            homeViewModel.checkPermissionsAndFetchLocation(false)
+            homeViewModel.checkPermissionsAndTrackingLocation(false)
             locationPermissionState.launchMultiplePermissionRequest()
         }
     }
@@ -98,13 +113,12 @@ fun HomeScreen(
                     when (isGpsEnabled) {
                         true -> {
                             //활성화 상태라면 위치 정보를 가져온다
-                            homeViewModel.checkPermissionsAndFetchLocation(true)
+                            homeViewModel.checkPermissionsAndTrackingLocation(true)
                         }
 
                         false -> {
-                            // GPS 설정 화면으로 이동
-                            context.startActivity(Intent(ACTION_LOCATION_SOURCE_SETTINGS))
-
+                            // GPS 설정 다이얼로그 출력
+                            promptEnableGPS(context, launcher)
                         }
                     }
 
@@ -167,7 +181,7 @@ fun CurrentWeatherSection(modifier: Modifier = Modifier, currentWeather: Current
 
         //현재 온도
         Text(
-            text = "${currentWeather.temperature} ˚",
+            text = "${currentWeather.temperature}˚",
             style = MaterialTheme.typography.displayMedium
         )
 
@@ -229,7 +243,8 @@ fun HourlyWeatherSection(
             }
 
             HorizontalDivider(
-                thickness = 2.dp,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                thickness = 1.dp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -238,7 +253,11 @@ fun HourlyWeatherSection(
                 modifier = Modifier.padding(16.dp)
             ) {
 
-                items(hourly.weatherInfo) { itemInfo ->
+                //현재 시간대부터 24시간만큼만 목록에 표시
+                val startIdx = getCurrentHour()
+                val list = hourly.weatherInfo.drop(startIdx).take(24)
+
+                items(list) { itemInfo ->
                     HourlyWeatherInfoItem(itemInfo = itemInfo)
                 }
             }
@@ -257,8 +276,8 @@ fun HourlyWeatherInfoItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        //온도
-        Text(text = "${itemInfo.temperature} ˚", style = MaterialTheme.typography.bodySmall)
+        //시간
+        Text(text = itemInfo.time, style = MaterialTheme.typography.bodySmall)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -270,7 +289,7 @@ fun HourlyWeatherInfoItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        //시간
-        Text(text = itemInfo.time, style = MaterialTheme.typography.bodySmall)
+        //온도
+        Text(text = "${itemInfo.temperature}˚", style = MaterialTheme.typography.bodySmall)
     }
 }

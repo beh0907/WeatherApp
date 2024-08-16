@@ -196,7 +196,7 @@ fun DailyWeatherInfoItem(
         ) {
 
             //온도
-            Text(text = "${itemInfo.temperatureMax} ˚", style = MaterialTheme.typography.bodySmall)
+            Text(text = "${itemInfo.temperatureMax}˚", style = MaterialTheme.typography.bodySmall)
 
             Spacer(modifier = Modifier.height(8.dp))
 

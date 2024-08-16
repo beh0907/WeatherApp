@@ -1,6 +1,5 @@
 package com.skymilk.weatherapp.presentation.home
 
-import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -57,6 +56,8 @@ class HomeViewModel @Inject constructor(
 
                         is Resource.Success -> {
 
+
+                            //정보 저장
                             _homeState.update {
                                 it.copy(
                                     isLoading = false,
@@ -93,7 +94,7 @@ class HomeViewModel @Inject constructor(
     }
 
     // 권한과 GPS 상태에 따라 위치를 가져오는 함수
-    fun checkPermissionsAndFetchLocation(hasPermissions: Boolean) {
+    fun checkPermissionsAndTrackingLocation(hasPermissions: Boolean) {
         _permissionsGranted.value = hasPermissions
         if (hasPermissions) {
             viewModelScope.launch {
@@ -101,7 +102,7 @@ class HomeViewModel @Inject constructor(
                 if (isGpsEnabled.value) {
                     locationRepository.getCurrentLocation().collectLatest { location ->
 
-                        Log.d("HomeViewModel", location.toString())
+                        Log.d("Viewmodel getCurrentLocation", location.toString())
 
                         location?.let {
                             dataStoreRepository.saveCurrentLocation(Pair(it.latitude, it.longitude))

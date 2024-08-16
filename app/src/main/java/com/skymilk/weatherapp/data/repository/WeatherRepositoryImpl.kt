@@ -1,5 +1,6 @@
 package com.skymilk.weatherapp.data.repository
 
+import android.util.Log
 import com.skymilk.weatherapp.data.mapper.ApiWeatherMapper
 import com.skymilk.weatherapp.data.remote.WeatherApi
 import com.skymilk.weatherapp.domain.models.Weather
@@ -19,6 +20,8 @@ class WeatherRepositoryImpl @Inject constructor(
 
         val apiWeather = weatherApi.getWeatherData(latitude = location.first, longitude = location.second)
         val weather = apiWeatherMapper.mapToDomain(apiWeather)
+
+        Log.d("api 요청", location.toString())
 
         emit(Resource.Success(weather))
     }.catch { e ->

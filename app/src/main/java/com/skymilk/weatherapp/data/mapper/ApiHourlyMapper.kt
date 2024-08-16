@@ -15,7 +15,7 @@ class ApiHourlyMapper : ApiMapper<Hourly, ApiHourlyWeather> {
     }
 
     private fun parseTime(time: List<Long>): List<String> {
-        return time.map { Util.formatUnixDate("HH:mm", it) }
+        return time.map { Util.formatUnixDate("a h시", it) }
     }
 
     private fun parseWeatherStatus(code: List<Int>):List<WeatherInfoItem> {
