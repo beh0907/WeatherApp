@@ -39,9 +39,9 @@ class LocationRepositoryImpl @Inject constructor(
             }
         }
 
-        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100L)
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 10000L)
             .apply {
-                setMinUpdateDistanceMeters(0f)//위치 업데이트 간의 최소 업데이트 거리
+                setMinUpdateDistanceMeters(1000f)//위치 업데이트 간의 최소 업데이트 거리
                 setGranularity(Granularity.GRANULARITY_PERMISSION_LEVEL)
                 setWaitForAccurateLocation(true)
             }.build()
