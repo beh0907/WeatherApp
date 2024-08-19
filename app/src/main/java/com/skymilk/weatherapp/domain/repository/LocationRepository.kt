@@ -8,4 +8,6 @@ interface LocationRepository {
     fun getCurrentLocation(): Flow<Location?>
 
     fun isGpsEnabled(): Flow<Boolean>
+
+    fun stopTracking()
 }

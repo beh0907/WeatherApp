@@ -31,7 +31,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skymilk.weatherapp.R
 import com.skymilk.weatherapp.domain.models.Daily
-import com.skymilk.weatherapp.presentation.common.LoadingDialog
 import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
 import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 
@@ -52,46 +51,56 @@ fun DailyScreen(
             dailyState.daily?.weatherInfo?.get(selectedIndexWeather.intValue)
         }
 
-    //로딩 다이얼로그 표시
-    LoadingDialog(isLoading = dailyState.isLoading)
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceEvenly
-    ) {
-        //선택한 날씨의 최고/저 온도
-        currentDailyWeatherItem?.let {
-            Text(
-                text = "최고 온도:${currentDailyWeatherItem.temperatureMax} 최저 온도:${currentDailyWeatherItem.temperatureMin}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+    when (dailyState.isLoading) {
+        true -> {
+            DailyScreenShimmer(modifier = modifier)
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        false -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceEvenly
+            ) {
+                //선택한 날씨의 최고/저 온도
+                currentDailyWeatherItem?.let {
+                    Text(
+                        text = "최고 온도:${currentDailyWeatherItem.temperatureMax} 최저 온도:${currentDailyWeatherItem.temperatureMin}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-        Text(
-            text = "7일 날씨 예측",
-            style = MaterialTheme.typography.headlineSmall
-        )
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "7일 날씨 예측",
+                    style = MaterialTheme.typography.headlineSmall
+                )
 
-        //일주일 날씨 정보 목록
-        DailyWeatherList(dailyState, selectedIndexWeather)
+                Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+                //일주일 날씨 정보 목록
+                DailyWeatherList(dailyState, selectedIndexWeather)
 
-        //선택한 날짜의 바람 상태 정보
-        SelectDailyWeatherWindSection(currentDailyWeatherItem)
+                Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+                //선택한 날짜의 바람 상태 정보
+                SelectDailyWeatherWindSection(currentDailyWeatherItem)
 
-        //선택한 날씨 일출/몰, 자외선 정보
-        currentDailyWeatherItem?.let {
-            SelectDailyWeatherSection(selectDailyWeatherInfo = it)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                //선택한 날씨 일출/몰, 자외선 정보
+                currentDailyWeatherItem?.let {
+                    SelectDailyWeatherSection(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        selectDailyWeatherInfo = it
+                    )
+                }
+            }
         }
     }
 }
@@ -166,7 +175,7 @@ fun SelectDailyWeatherSection(
     selectDailyWeatherInfo: Daily.WeatherInfo,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         SunRiseWeatherItem(weatherInfo = selectDailyWeatherInfo)

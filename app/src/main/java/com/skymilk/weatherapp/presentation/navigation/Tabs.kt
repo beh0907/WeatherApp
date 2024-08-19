@@ -1,4 +1,4 @@
-package com.skymilk.weatherapp.presentation.common
+package com.skymilk.weatherapp.presentation.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange

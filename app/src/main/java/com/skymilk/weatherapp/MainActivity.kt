@@ -25,7 +25,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.skymilk.weatherapp.presentation.daily.DailyScreen
 import com.skymilk.weatherapp.presentation.home.HomeScreen
 import com.skymilk.weatherapp.ui.theme.WeatherAppTheme
-import com.skymilk.weatherapp.presentation.common.Tabs
+import com.skymilk.weatherapp.presentation.navigation.Tabs
 import com.skymilk.weatherapp.utils.EventBus.events
 import com.skymilk.weatherapp.utils.Event
 import dagger.hilt.android.AndroidEntryPoint

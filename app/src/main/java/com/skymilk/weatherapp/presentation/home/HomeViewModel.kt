@@ -1,5 +1,6 @@
 package com.skymilk.weatherapp.presentation.home
 
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -39,6 +40,10 @@ class HomeViewModel @Inject constructor(
     //GPS 활성화 여부
     val isGpsEnabled: StateFlow<Boolean> = locationRepository.isGpsEnabled()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    //측위된 위치 정보
+    private val _fusedLocation = MutableStateFlow(null)
+    val fusedLocation: StateFlow<Location?> = _fusedLocation
 
     init {
         viewModelScope.launch {
@@ -96,6 +101,12 @@ class HomeViewModel @Inject constructor(
     // 권한과 GPS 상태에 따라 위치를 가져오는 함수
     fun checkPermissionsAndTrackingLocation(hasPermissions: Boolean) {
         _permissionsGranted.value = hasPermissions
+
+        //권한과 gps 둘 중 하나라도 없다면
+        if (!isGpsEnabled.value || !hasPermissions) {
+
+        }
+
         if (hasPermissions) {
             viewModelScope.launch {
                 // GPS가 활성화된 경우에만 위치 정보를 가져옴

@@ -2,9 +2,9 @@ package com.skymilk.weatherapp.presentation.home
 
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
+import android.content.Intent
+import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,13 +42,12 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.skymilk.weatherapp.domain.models.CurrentWeather
 import com.skymilk.weatherapp.domain.models.Daily
 import com.skymilk.weatherapp.domain.models.Hourly
-import com.skymilk.weatherapp.presentation.common.GpsUtil.promptEnableGPS
-import com.skymilk.weatherapp.presentation.common.LoadingDialog
 import com.skymilk.weatherapp.presentation.common.SunRiseWeatherItem
 import com.skymilk.weatherapp.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.utils.Util
 import com.skymilk.weatherapp.utils.Util.getCurrentHour
 import java.util.Date
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -68,96 +67,86 @@ fun HomeScreen(
             ACCESS_FINE_LOCATION,
             ACCESS_COARSE_LOCATION
         )
-    ) { map ->
-        //위치정보 권한이 허용되었을 때
-        if (map[ACCESS_FINE_LOCATION] == true && map[ACCESS_COARSE_LOCATION] == true)
-            Log.d("rememberMultiplePermissionsState", "권한 체크")
-    }
-
-    // rememberLauncherForActivityResult는 @Composable 컨텍스트에서 호출되어야 합니다.
-    val launcher =
-        rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode == android.app.Activity.RESULT_OK) {
-                Log.d("권한", "활성화 됐어용~")
-            }
-        }
+    )
 
     // 권한과 GPS 상태에 따라 위치 정보를 가져옴
     LaunchedEffect(isGpsEnabled, locationPermissionState.allPermissionsGranted) {
-        if (locationPermissionState.allPermissionsGranted) {
+        Log.d(
+            "권한",
+            "isGpsEnabled : $isGpsEnabled ㅡ allPermissionsGranted : ${locationPermissionState.allPermissionsGranted}"
+        )
+
+        //권한과 gps 상태가 활성화 되어 있다면 위치 정보를 요청한다
+        if (locationPermissionState.allPermissionsGranted && isGpsEnabled) {
             homeViewModel.checkPermissionsAndTrackingLocation(true)
-        } else {
-            homeViewModel.checkPermissionsAndTrackingLocation(false)
-            locationPermissionState.launchMultiplePermissionRequest()
+            return@LaunchedEffect
         }
+
+        //권한이 없다면 요청
+        if (!locationPermissionState.allPermissionsGranted)
+            locationPermissionState.launchMultiplePermissionRequest()
+
+        //그 이외의 경우엔 요청X
+        homeViewModel.checkPermissionsAndTrackingLocation(false)
     }
 
-    //로딩 다이얼로그 표시
-    LoadingDialog(isLoading = homeState.isLoading)
+    when (homeState.isLoading) {
+        true -> {
+            HomeScreenShimmer(modifier = modifier)
+        }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp), contentAlignment = Alignment.Center
-    ) {
-        //위치 정보 새로고침
-        IconButton(
-            modifier = Modifier
-                .size(36.dp)
-                .align(Alignment.TopEnd),
-            onClick = {
-                //권한 여부 체크
-                if (locationPermissionState.allPermissionsGranted) {
+        false -> {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                //위치 정보 새로고침
+                IconButton(modifier = Modifier
+                    .size(36.dp)
+                    .align(Alignment.TopEnd), onClick = {
 
-                    //GPS 활성화 여부 체크
-                    when (isGpsEnabled) {
-                        true -> {
-                            //활성화 상태라면 위치 정보를 가져온다
-                            homeViewModel.checkPermissionsAndTrackingLocation(true)
-                        }
+                    //권한이 없다면 요청
+                    if (!locationPermissionState.allPermissionsGranted)
+                        locationPermissionState.launchMultiplePermissionRequest()
 
-                        false -> {
-                            // GPS 설정 다이얼로그 출력
-                            promptEnableGPS(context, launcher)
-                        }
+                    //gps가 활성화되어 있지 않다면 요청
+                    if (!isGpsEnabled) {
+                        val intent = Intent(ACTION_LOCATION_SOURCE_SETTINGS)
+                        context.startActivity(intent)
                     }
 
-                } else {
-                    //권한이 없다면 다시 권한 요청
-                    locationPermissionState.launchMultiplePermissionRequest()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh, contentDescription = "refresh"
+                    )
                 }
 
+                //날씨 정보가 있을떄
+                homeState.weather?.let {
+                    //현재 날씨 정보
+                    CurrentWeatherSection(
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        currentWeather = it.currentWeather
+                    )
+
+                    //시간별 날씨
+                    HourlyWeatherSection(
+                        modifier = Modifier.align(Alignment.BottomCenter), hourly = it.hourly
+                    )
+                }
+
+                //필터링된 오늘 날씨 정보가 있을 때
+                homeState.dailyWeatherInfo?.let {
+                    DailyWeatherSection(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        dailyWeatherInfo = it
+                    )
+                }
             }
-        ) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "refresh"
-            )
-        }
-
-        //날씨 정보가 있을떄
-        homeState.weather?.let {
-            //현재 날씨 정보
-            CurrentWeatherSection(
-                modifier = Modifier.align(Alignment.TopCenter),
-                currentWeather = it.currentWeather
-            )
-
-            //시간별 날씨
-            HourlyWeatherSection(
-                modifier = Modifier.align(Alignment.BottomCenter),
-                hourly = it.hourly
-            )
-        }
-
-        //필터링된 오늘 날씨 정보가 있을 때
-        homeState.dailyWeatherInfo?.let {
-            DailyWeatherSection(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp),
-                dailyWeatherInfo = it
-            )
         }
     }
 }
