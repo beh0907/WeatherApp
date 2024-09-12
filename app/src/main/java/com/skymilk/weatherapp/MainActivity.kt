@@ -22,12 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
-import com.skymilk.weatherapp.presentation.daily.DailyScreen
-import com.skymilk.weatherapp.presentation.home.HomeScreen
+import com.skymilk.weatherapp.store.presentation.daily.DailyScreen
+import com.skymilk.weatherapp.store.presentation.home.HomeScreen
+import com.skymilk.weatherapp.store.presentation.navigation.Tabs
 import com.skymilk.weatherapp.ui.theme.WeatherAppTheme
-import com.skymilk.weatherapp.presentation.navigation.Tabs
-import com.skymilk.weatherapp.utils.EventBus.events
 import com.skymilk.weatherapp.utils.Event
+import com.skymilk.weatherapp.utils.EventBus.events
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 
@@ -83,7 +83,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         ) { innerPadding ->
-            when(selectedIndex) {
+            when (selectedIndex) {
                 0 -> {
                     HomeScreen(modifier = Modifier.padding(innerPadding))
                 }

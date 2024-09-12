@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.dagger.hilt.android)
-    id("kotlinx-serialization")
+    kotlin("plugin.serialization") version "1.9.22"
     kotlin("kapt")
 }
 
@@ -43,7 +43,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        kotlinCompilerExtensionVersion = "1.5.5"
     }
     packaging {
         resources {
@@ -86,11 +86,12 @@ dependencies {
     implementation(libs.retrofit2.kotlinx.serialization.converter)
     implementation(libs.okhttp)
 
-    //SharedPreferences
+    //datastore SharedPreferences
     implementation (libs.androidx.datastore.preferences)
 
     //Compose permissions
     implementation (libs.accompanist.permissions)
+    implementation (libs.tedpermission.coroutine)
 }
 
 kapt {
