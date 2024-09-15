@@ -90,7 +90,6 @@ dependencies {
     implementation (libs.androidx.datastore.preferences)
 
     //Compose permissions
-    implementation (libs.accompanist.permissions)
     implementation (libs.tedpermission.coroutine)
 }
 

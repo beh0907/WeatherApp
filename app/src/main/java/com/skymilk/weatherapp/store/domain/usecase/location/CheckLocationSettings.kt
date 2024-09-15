@@ -4,11 +4,11 @@ import com.skymilk.weatherapp.store.domain.repository.LocationRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class GetIsGpsEnabled @Inject constructor(
+class CheckLocationSettings @Inject constructor(
     private val locationRepository: LocationRepository
 ) {
 
-    operator fun invoke(): Flow<Boolean> {
-        return locationRepository.getIsGpsEnabled()
+    operator fun invoke(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        return locationRepository.checkLocationSettings(onSuccess, onFailure)
     }
 }

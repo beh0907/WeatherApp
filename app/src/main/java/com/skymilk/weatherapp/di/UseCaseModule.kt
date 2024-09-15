@@ -6,6 +6,7 @@ import com.skymilk.weatherapp.store.domain.repository.WeatherRepository
 import com.skymilk.weatherapp.store.domain.usecase.datastore.DataStoreUseCase
 import com.skymilk.weatherapp.store.domain.usecase.datastore.GetLocation
 import com.skymilk.weatherapp.store.domain.usecase.datastore.SaveCurrentLocation
+import com.skymilk.weatherapp.store.domain.usecase.location.CheckLocationSettings
 import com.skymilk.weatherapp.store.domain.usecase.location.GetCurrentLocation
 import com.skymilk.weatherapp.store.domain.usecase.location.GetIsGpsEnabled
 import com.skymilk.weatherapp.store.domain.usecase.location.LocationUseCase
@@ -40,7 +41,8 @@ object UseCaseModule {
     ) = LocationUseCase(
         GetCurrentLocation(locationRepository),
         GetIsGpsEnabled(locationRepository),
-        StopTracking(locationRepository)
+        StopTracking(locationRepository),
+        CheckLocationSettings(locationRepository)
     )
 
 

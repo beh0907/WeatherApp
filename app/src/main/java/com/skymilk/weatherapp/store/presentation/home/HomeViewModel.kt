@@ -1,20 +1,22 @@
 package com.skymilk.weatherapp.store.presentation.home
 
 import android.location.Location
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skymilk.weatherapp.store.domain.repository.DataStoreRepository
-import com.skymilk.weatherapp.store.domain.repository.LocationRepository
-import com.skymilk.weatherapp.store.domain.repository.WeatherRepository
+import com.skymilk.weatherapp.store.domain.usecase.datastore.DataStoreUseCase
+import com.skymilk.weatherapp.store.domain.usecase.location.LocationUseCase
+import com.skymilk.weatherapp.store.domain.usecase.weather.WeatherUseCase
 import com.skymilk.weatherapp.utils.DateUtil
 import com.skymilk.weatherapp.utils.Event
+import com.skymilk.weatherapp.utils.PermissionUtil
 import com.skymilk.weatherapp.utils.Resource
 import com.skymilk.weatherapp.utils.sendEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.stateIn
@@ -24,34 +26,38 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val weatherRepository: WeatherRepository,
-    private val dataStoreRepository: DataStoreRepository,
-    private val locationRepository: LocationRepository
+    private val weatherUseCase: WeatherUseCase,
+    private val dataStoreUseCase: DataStoreUseCase,
+    private val locationUseCase: LocationUseCase
 ) : ViewModel() {
 
     //홈 상태 정보
     private val _homeState = MutableStateFlow(HomeState())
     val homeState = _homeState.asStateFlow()
 
-    // 권한과 GPS 상태를 각각 확인하기 위한 StateFlow
-    private val _permissionsGranted = MutableStateFlow(false)
-    val permissionsGranted: StateFlow<Boolean> = _permissionsGranted
-
-    //GPS 활성화 여부
-    val isGpsEnabled: StateFlow<Boolean> = locationRepository.getIsGpsEnabled()
+    //GPS
+    val gpsState: StateFlow<Boolean> = locationUseCase.getIsGpsEnabled()
         .stateIn(viewModelScope, SharingStarted.Lazily, false)
 
+    //권한 허용 여부
+    private val _permissionGranted = MutableStateFlow(false)
+    val permissionGranted = _permissionGranted.asStateFlow()
+
     //측위된 위치 정보
-    private val _fusedLocation = MutableStateFlow(null)
-    val fusedLocation: StateFlow<Location?> = _fusedLocation
+    private val _fusedLocation = MutableSharedFlow<Location>()
+    val fusedLocation = _fusedLocation.asSharedFlow()
 
     init {
         viewModelScope.launch {
+            _permissionGranted.update { PermissionUtil.requestLocationPermissions() }
+        }
+
+        viewModelScope.launch {
             //DataStore로부터 위치 정보 가져오기
-            dataStoreRepository.getLocation().collectLatest { location ->
+            dataStoreUseCase.getLocation().collectLatest { location ->
 
                 //API로부터 날씨 정보 가져오기
-                weatherRepository.getWeatherData(location).collectLatest { response ->
+                weatherUseCase.getWeatherData(location).collectLatest { response ->
                     when (response) {
                         is Resource.Loading -> {
                             _homeState.update {
@@ -60,8 +66,6 @@ class HomeViewModel @Inject constructor(
                         }
 
                         is Resource.Success -> {
-
-
                             //정보 저장
                             _homeState.update {
                                 it.copy(
@@ -98,30 +102,44 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 권한과 GPS 상태에 따라 위치를 가져오는 함수
-    fun checkPermissionsAndTrackingLocation(hasPermissions: Boolean) {
-        _permissionsGranted.value = hasPermissions
+    //시작
+    fun startTracking() {
+        viewModelScope.launch {
+            //권한 요청 및 체크
+            if (!PermissionUtil.requestLocationPermissions()) {
+                sendEvent(Event.Toast("GPS 권한을 허용해주세요"))
+                return@launch
+            }
 
-        //권한과 gps 둘 중 하나라도 없다면
-        if (!isGpsEnabled.value || !hasPermissions) {
+            //위치 정보 상태 체크
+            if (!gpsState.value) {
+                sendEvent(Event.Toast("GPS 상태를 확인해주세요"))
+                return@launch
+            }
 
-        }
+            //위치 정보 수집
+            locationUseCase.getCurrentLocation().collectLatest { location ->
+                location?.let {
+                    //수집된 위치 정보 저장
+                    _fusedLocation.emit(location)
 
-        if (hasPermissions) {
-            viewModelScope.launch {
-                // GPS가 활성화된 경우에만 위치 정보를 가져옴
-                if (isGpsEnabled.value) {
-                    locationRepository.getCurrentLocation().collectLatest { location ->
-
-                        Log.d("Viewmodel getCurrentLocation", location.toString())
-
-                        location?.let {
-                            dataStoreRepository.saveCurrentLocation(Pair(it.latitude, it.longitude))
-                        }
-
-                    }
+                    //수집된 위치 정보 dataStore 저장
+                    dataStoreUseCase.saveCurrentLocation(Pair(it.latitude, it.longitude))
                 }
             }
+
         }
+    }
+
+    //중지
+    fun stopTracking() {
+        viewModelScope.launch {
+            locationUseCase.stopTracking()
+        }
+
+    }
+
+    fun checkLocationSettings(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        locationUseCase.checkLocationSettings(onSuccess, onFailure)
     }
 }

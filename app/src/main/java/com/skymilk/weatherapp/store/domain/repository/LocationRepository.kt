@@ -10,4 +10,6 @@ interface LocationRepository {
     fun getIsGpsEnabled(): Flow<Boolean>
 
     suspend fun stopTracking()
+
+    fun checkLocationSettings(onSuccess: () -> Unit, onFailure: (Exception) -> Unit)
 }

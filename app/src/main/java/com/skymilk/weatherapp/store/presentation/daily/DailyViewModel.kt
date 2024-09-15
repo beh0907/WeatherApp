@@ -2,8 +2,8 @@ package com.skymilk.weatherapp.store.presentation.daily
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.skymilk.weatherapp.store.domain.repository.DataStoreRepository
-import com.skymilk.weatherapp.store.domain.repository.WeatherRepository
+import com.skymilk.weatherapp.store.domain.usecase.datastore.DataStoreUseCase
+import com.skymilk.weatherapp.store.domain.usecase.weather.WeatherUseCase
 import com.skymilk.weatherapp.utils.Event
 import com.skymilk.weatherapp.utils.Resource
 import com.skymilk.weatherapp.utils.sendEvent
@@ -17,8 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class DailyViewModel @Inject constructor(
-    private val weatherRepository: WeatherRepository,
-    private val dataStoreRepository: DataStoreRepository
+    private val weatherUseCase: WeatherUseCase,
+    private val dataStoreUseCase: DataStoreUseCase
 ) : ViewModel() {
 
     private val _dailyState = MutableStateFlow(DailyState())
@@ -27,10 +27,10 @@ class DailyViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             //DataStore로부터 위치 정보 가져오기
-            dataStoreRepository.getLocation().collectLatest { location ->
+            dataStoreUseCase.getLocation().collectLatest { location ->
 
                 //API로부터 날씨 정보 가져오기
-                weatherRepository.getWeatherData(location).collectLatest { response ->
+                weatherUseCase.getWeatherData(location).collectLatest { response ->
                     when (response) {
                         is Resource.Loading -> {
                             _dailyState.update {

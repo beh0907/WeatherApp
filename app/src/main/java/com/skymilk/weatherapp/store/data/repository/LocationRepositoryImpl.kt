@@ -12,8 +12,10 @@ import com.google.android.gms.location.Granularity
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.Priority
-import com.skymilk.weatherapp.store.data.remote.FusedLocationProvider
+import com.skymilk.weatherapp.store.data.remote.FusedLocationManager
 import com.skymilk.weatherapp.store.domain.repository.LocationRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -25,7 +27,7 @@ import javax.inject.Inject
 
 class LocationRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val fusedLocationProvider: FusedLocationProvider
+    private val fusedLocationManager: FusedLocationManager
 ) : LocationRepository {
 
     @SuppressLint("MissingPermission")
@@ -47,56 +49,61 @@ class LocationRepositoryImpl @Inject constructor(
                 setWaitForAccurateLocation(true)
             }.build()
 
-
         try {
             // 위치 업데이트를 요청합니다.
-            fusedLocationProvider.requestLocationUpdates(locationRequest, locationCallback)
+            fusedLocationManager.requestLocationUpdates(locationRequest, locationCallback)
         } catch (e: SecurityException) {
             e.printStackTrace()
-            // 위치 권한이 없는 경우 처리
         }
 
         // Flow가 닫힐 때 위치 업데이트를 중지합니다.
         awaitClose {
-            fusedLocationProvider.removeLocationUpdates(locationCallback)
+            fusedLocationManager.removeLocationUpdates()
         }
     }.distinctUntilChanged() // 중복된 상태 변화 방지
 
-//    @SuppressLint("MissingPermission")
-//    override fun getCurrentLocation(): Flow<Location?> = flow {
-//        val location = suspendCoroutine<Location?> { continuation ->
-//            fusedLocationProvider.getCurrentLocationOnce(
-//                onSuccessListener = { location ->
-//                    Log.d("onSuccessListener", location.toString())
-//                    continuation.resume(location)
-//                },
-//                onFailureListener = { exception ->
-//                    Log.d("onFailureListener", exception.message.toString())
-//                    continuation.resumeWithException(exception)
-//                }
-//            )
-//        }
-//        emit(location)
-//    }
 
+    override fun checkLocationSettings(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        val locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100L).build()
+
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
+        val client = LocationServices.getSettingsClient(context)
+        val task = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener {
+            onSuccess()
+        }
+
+        task.addOnFailureListener { exception ->
+            onFailure(exception)
+        }
+    }
+
+
+    //GPS 활성화 상태 정보
     override fun getIsGpsEnabled(): Flow<Boolean> = callbackFlow {
+
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
         val gpsStatusReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 if (intent.action == LocationManager.PROVIDERS_CHANGED_ACTION) {
-                    val isEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                    trySend(isEnabled)
+                    val isGpsEnabled =
+                        locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+                    trySend(isGpsEnabled)
                 }
             }
         }
 
+        //브로드캐스트 리시버 등록
         val intentFilter = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
         context.registerReceiver(gpsStatusReceiver, intentFilter)
 
-        // gps 상태 전달
-        val isEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        trySend(isEnabled)
+        //현재 상태값 체크
+        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+
+        trySend(isGpsEnabled)
 
         awaitClose {
             context.unregisterReceiver(gpsStatusReceiver)
@@ -104,5 +111,6 @@ class LocationRepositoryImpl @Inject constructor(
     }.distinctUntilChanged()  // 중복된 상태 변화 방지
 
     override suspend fun stopTracking() {
+        fusedLocationManager.removeLocationUpdates()
     }
 }

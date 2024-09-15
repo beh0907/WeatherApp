@@ -2,7 +2,7 @@ package com.skymilk.weatherapp.di
 
 import android.content.Context
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
-import com.skymilk.weatherapp.store.data.remote.FusedLocationProvider
+import com.skymilk.weatherapp.store.data.remote.FusedLocationManager
 import com.skymilk.weatherapp.store.data.remote.WeatherApi
 import com.skymilk.weatherapp.utils.Constants
 import dagger.Module
@@ -40,6 +40,6 @@ object ApiModule {
 
     @Provides
     @Singleton
-    fun provideFusedLocationProvider(@ApplicationContext context: Context): FusedLocationProvider =
-        FusedLocationProvider(context)
+    fun provideFusedLocationProvider(@ApplicationContext context: Context): FusedLocationManager =
+        FusedLocationManager(context)
 }

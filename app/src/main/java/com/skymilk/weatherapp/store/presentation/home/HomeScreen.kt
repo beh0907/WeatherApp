@@ -1,9 +1,7 @@
 package com.skymilk.weatherapp.store.presentation.home
 
-import android.Manifest.permission.ACCESS_COARSE_LOCATION
-import android.Manifest.permission.ACCESS_FINE_LOCATION
-import android.content.Intent
-import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
+import android.content.IntentSender
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,8 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,8 +34,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.android.gms.common.api.ResolvableApiException
+import com.skymilk.weatherapp.MainActivity
 import com.skymilk.weatherapp.store.domain.models.CurrentWeather
 import com.skymilk.weatherapp.store.domain.models.Daily
 import com.skymilk.weatherapp.store.domain.models.Hourly
@@ -45,10 +43,10 @@ import com.skymilk.weatherapp.store.presentation.common.SunRiseWeatherItem
 import com.skymilk.weatherapp.store.presentation.common.UvWeatherItem
 import com.skymilk.weatherapp.utils.DateUtil
 import com.skymilk.weatherapp.utils.DateUtil.getCurrentHour
+import kotlinx.coroutines.launch
 import java.util.Date
 
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -56,34 +54,38 @@ fun HomeScreen(
 ) {
     //collectAsStateWithLifecycle - 앱이 사용할 때만 플로우를 수집한다
     val homeState by homeViewModel.homeState.collectAsStateWithLifecycle()
-    val isGpsEnabled by homeViewModel.isGpsEnabled.collectAsStateWithLifecycle()
-    val permissionsGranted by homeViewModel.permissionsGranted.collectAsStateWithLifecycle()
+    val gpsState by homeViewModel.gpsState.collectAsStateWithLifecycle()
+    val permissionGranted by homeViewModel.permissionGranted.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    //권한 상태
-    val locationPermissionState = rememberMultiplePermissionsState(
-        permissions = listOf(
-            ACCESS_FINE_LOCATION,
-            ACCESS_COARSE_LOCATION
+
+    //권한 허용 상태 확인
+    LaunchedEffect(key1 = permissionGranted) {
+        if (!permissionGranted) return@LaunchedEffect
+
+        homeViewModel.checkLocationSettings(
+            onSuccess = {
+                Log.d("onSuccess", "onSuccess")
+                homeViewModel.startTracking()
+            },
+            onFailure = { exception ->
+                Log.d("exception", "exception")
+                if (exception is ResolvableApiException) {
+                    try {
+                        exception.startResolutionForResult(context as MainActivity, 500)
+                    } catch (sendEx: IntentSender.SendIntentException) {
+                        // 설정 변경 요청 실패
+                    }
+                }
+            }
         )
-    )
+    }
 
-    // 권한과 GPS 상태에 따라 위치 정보를 가져옴
-    LaunchedEffect(isGpsEnabled, permissionsGranted) {
-
-        //권한과 gps 상태가 활성화 되어 있다면 위치 정보를 요청한다
-        if (locationPermissionState.allPermissionsGranted && isGpsEnabled) {
-            homeViewModel.checkPermissionsAndTrackingLocation(true)
-            return@LaunchedEffect
-        }
-
-        //권한이 없다면 요청
-        if (!locationPermissionState.allPermissionsGranted)
-            locationPermissionState.launchMultiplePermissionRequest()
-
-        //그 이외의 경우엔 요청X
-        homeViewModel.checkPermissionsAndTrackingLocation(false)
+    //GPS가 비활성화일 땐 위치정보를 가져오지 않는다
+    LaunchedEffect(key1 = gpsState) {
+        if (!permissionGranted) homeViewModel.stopTracking()
     }
 
     when (homeState.isLoading) {
@@ -98,26 +100,44 @@ fun HomeScreen(
                     .padding(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                //위치 정보 새로고침
-                IconButton(modifier = Modifier
-                    .size(36.dp)
-                    .align(Alignment.TopEnd), onClick = {
 
-                    //권한이 없다면 요청
-                    if (!locationPermissionState.allPermissionsGranted)
-                        locationPermissionState.launchMultiplePermissionRequest()
+//                Row(
+//                    modifier = Modifier.align(Alignment.TopEnd)
+//                ) {
+////                    //GPS 상태 이미지
+//                    Icon(
+//                        painter = painterResource(id = if (networkState.isGpsEnabled) R.drawable.ic_location_on else R.drawable.ic_location_off),
+//                        contentDescription = "is gps enabled"
+//                    )
+//                }
 
-                    //gps가 활성화되어 있지 않다면 요청
-                    if (!isGpsEnabled) {
-                        val intent = Intent(ACTION_LOCATION_SOURCE_SETTINGS)
-                        context.startActivity(intent)
+                IconButton(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    onClick = {
+                        scope.launch {
+                            homeViewModel.checkLocationSettings(
+                                onSuccess = {
+                                    homeViewModel.startTracking()
+                                },
+                                onFailure = { exception ->
+                                    if (exception is ResolvableApiException) {
+                                        try {
+                                            exception.startResolutionForResult(
+                                                context as MainActivity,
+                                                500
+                                            )
+                                        } catch (sendEx: IntentSender.SendIntentException) {
+                                            // 설정 변경 요청 실패
+                                        }
+                                    }
+                                }
+                            )
+                        }
                     }
-
-                }) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh, contentDescription = "refresh"
-                    )
+                ) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "refresh")
                 }
+
 
                 //날씨 정보가 있을떄
                 homeState.weather?.let {

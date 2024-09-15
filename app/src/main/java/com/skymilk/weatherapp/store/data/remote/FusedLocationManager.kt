@@ -3,6 +3,7 @@ package com.skymilk.weatherapp.store.data.remote
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
+import android.os.Looper
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -10,24 +11,31 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 
-class FusedLocationProvider(private val context: Context) {
+class FusedLocationManager(private val context: Context) {
 
     private var isLocationUpdateRequested: Boolean = false
     private val fusedLocationProviderClient: FusedLocationProviderClient by lazy {
         LocationServices.getFusedLocationProviderClient(context)
     }
+    private var locationCallback: LocationCallback? = null
 
     fun requestLocationUpdates(
         locationRequest: LocationRequest,
         locationCallback: LocationCallback
-    ) {//등록 꾸준히 업데이트
+    ) {
+        //동작중인 콜백이 있다면 제거
+        removeLocationUpdates()
+
         try {
             // 위치 업데이트 요청
             fusedLocationProviderClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback,
-                null
+                Looper.getMainLooper()
             )
+
+            this.locationCallback = locationCallback
+
             isLocationUpdateRequested = true
         } catch (e: SecurityException) {
             e.printStackTrace()
@@ -35,9 +43,10 @@ class FusedLocationProvider(private val context: Context) {
         }
     }
 
-    fun removeLocationUpdates(locationCallback: LocationCallback) {//위치 업데이트 요청을 중지
+    fun removeLocationUpdates() {//위치 업데이트 요청을 중지
         if (isLocationUpdateRequested) {
-            fusedLocationProviderClient.removeLocationUpdates(locationCallback)
+            fusedLocationProviderClient.removeLocationUpdates(locationCallback!!)
+            locationCallback = null
             isLocationUpdateRequested = false
         }
     }
