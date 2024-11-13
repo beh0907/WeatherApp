@@ -11,6 +11,7 @@ import com.skymilk.weatherapp.store.domain.repository.DataStoreRepository
 import com.skymilk.weatherapp.utils.Constants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
